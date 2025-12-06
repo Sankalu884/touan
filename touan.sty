@@ -1,0 +1,117 @@
+% touan.sty
+% 答案作成用・軽量セクション管理パッケージ
+%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{touan}[2025/12/06 v1.0 Touan Style]
+
+%==========================================================%
+% 1. カウンタの定義
+%==========================================================%
+\newcounter{touanSectionA}
+\newcounter{touanSectionB}[touanSectionA] % Aが進むとBリセット
+\newcounter{touanSectionC}[touanSectionB] % Bが進むとCリセット
+\newcounter{touanSectionD}[touanSectionC] % Cが進むとDリセット
+
+%==========================================================%
+% 2. 文字出力マクロ
+%==========================================================%
+
+% カタカナ変換 (TeX標準のifcase分岐)
+\def\touan@kata#1{%
+  \ifcase#1\or
+  ア\or イ\or ウ\or エ\or オ\or
+  カ\or キ\or ク\or ケ\or コ\or
+  サ\or シ\or ス\or セ\or ソ\or
+  タ\or チ\or ツ\or テ\or ト\or
+  ナ\or ニ\or ヌ\or ネ\or ノ\or
+  ハ\or ヒ\or フ\or ヘ\or ホ\or
+  マ\or ミ\or ム\or メ\or モ\or
+  ヤ\or ユ\or ヨ\or
+  ラ\or リ\or ル\or レ\or ロ\or
+  ワ\or ヲ\or ン\else
+  ?\fi
+}
+
+% 括弧付き数字 (Unicode計算式)
+% \UTF{2474} (U+2474) を基準に算出
+\def\touan@kakko#1{%
+  \ifnum#1>20
+    (#1)% 21以上は通常の (21) 表記
+  \else
+    \char\numexpr"2473 + #1\relax
+  \fi
+}
+
+%==========================================================%
+% 3. 表示形式の設定
+%==========================================================%
+\def\thetouanSectionA{第\arabic{touanSectionA}}
+\def\thetouanSectionB{\arabic{touanSectionB}}
+\def\thetouanSectionC{\touan@kakko{\value{touanSectionC}}}
+\def\thetouanSectionD{\touan@kata{\value{touanSectionD}}}
+
+%==========================================================%
+% 4. レイアウト出力用共通コマンド
+%==========================================================%
+% #1: 見出し開始位置 (zw)
+% #2: 見出しラベルブロック幅 (zw) ※空白1zwを含む
+% #3: ラベルの中身
+% #4: タイトル
+\newcommand{\touan@sectioncommon}[4]{%
+  \par
+  % --- 本文の字下げ設定 ---
+  % 見出し位置(#1) + 1zw (2行目以降)
+  \global\leftskip=#1\zw\relax
+  \global\advance\leftskip by 1\zw\relax
+  
+  % 1行目の追加字下げ (+1zw) -> 合計2zw下げ
+  \global\parindent=1\zw\relax 
+  
+  % --- 見出し行の設定 ---
+  \begingroup
+    \leftskip=#1\zw\relax
+    \parindent=0\zw\relax
+    \noindent
+    % ラベルブロック（左寄せ）
+    \makebox[#2\zw][l]{#3}% 
+    #4% タイトル出力
+    \par
+  \endgroup
+  \nopagebreak % 見出し直後の改ページ抑制
+}
+
+%==========================================================%
+% 5. ユーザ用コマンド定義 (\sectionA - \sectionD)
+%==========================================================%
+
+% --- \sectionA : 「第1」 ---
+% 開始位置: 0zw, ラベル幅: 3zw (第+数字+空白)
+% ※直前に1行空ける
+\newcommand{\sectionA}[1]{%
+  \refstepcounter{touanSectionA}%
+  \par\addvspace{\baselineskip}%
+  \touan@sectioncommon{0}{3}{第\makebox[1\zw][c]{\arabic{touanSectionA}}}{#1}%
+}
+
+% --- \sectionB : 「1」 ---
+% 開始位置: 1zw, ラベル幅: 2zw (数字+空白)
+\newcommand{\sectionB}[1]{%
+  \refstepcounter{touanSectionB}%
+  \touan@sectioncommon{1}{2}{\makebox[1\zw][c]{\arabic{touanSectionB}}}{#1}%
+}
+
+% --- \sectionC : 「\UTF{2474}」 ---
+% 開始位置: 2zw, ラベル幅: 2zw (記号+空白)
+\newcommand{\sectionC}[1]{%
+  \refstepcounter{touanSectionC}%
+  \touan@sectioncommon{2}{2}{\makebox[1\zw][c]{\touan@kakko{\value{touanSectionC}}}}{#1}%
+}
+
+% --- \sectionD : 「ア」 ---
+% 開始位置: 3zw, ラベル幅: 2zw (カナ+空白)
+\newcommand{\sectionD}[1]{%
+  \refstepcounter{touanSectionD}%
+  \touan@sectioncommon{3}{2}{\makebox[1\zw][c]{\touan@kata{\value{touanSectionD}}}}{#1}%
+}
+
+\endinput
